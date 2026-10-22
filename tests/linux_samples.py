@@ -21,6 +21,9 @@ LSBLK = json.dumps({"blockdevices": [
      "tran": "nvme", "rota": False, "rm": False, "ro": False, "mountpoints": [None], "label": None},
     {"name": "loop0", "path": "/dev/loop0", "type": "loop", "size": 1000, "mountpoints": ["/run/live/rootfs"]},
     {"name": "sr0", "path": "/dev/sr0", "type": "rom", "size": 0},
+    {"name": "fd0", "path": "/dev/fd0", "type": "disk", "size": 4096, "tran": None},
+    {"name": "sdc", "path": "/dev/sdc", "type": "disk", "size": 0, "model": "Card Reader",
+     "tran": "usb", "rm": True},
 ]})
 
 HDPARM_I = """

@@ -52,10 +52,13 @@ def evaluate(drive: Drive, backends: list) -> Drive:
     drive.methods = []
 
     if drive.bus_type == BusType.USB or drive.connection == ConnectionPath.USB_BRIDGE:
+        can_overwrite = backend_for(backends, drive, MethodId.OVERWRITE_ZERO) is not None
+        offer = ("only host overwrite is offered" if can_overwrite else
+                 "this edition cannot erase it; boot the EZWipe USB to overwrite it")
         drive.limitations.append(
-            "Identified through a USB bridge. Firmware sanitize commands are usually not passed "
-            "through, so only host overwrite is offered. For an NVMe enclosure such as the "
-            "TerraMaster D4, connect it to a USB4 or Thunderbolt port so the drives show as NVMe.")
+            f"Identified through a USB bridge. Firmware sanitize commands are usually not passed "
+            f"through, so {offer}. For an NVMe enclosure such as the TerraMaster D4, connect it "
+            f"to a USB4 or Thunderbolt port so the drives show as NVMe.")
     if drive.protocol == Protocol.NVME and "nvme" not in drive.capabilities:
         drive.limitations.append(
             "Drive identified, but NVMe capabilities could not be read. "

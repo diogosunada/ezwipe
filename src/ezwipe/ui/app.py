@@ -36,7 +36,7 @@ from ..reports.export import history_csv
 from .dialogs import AutoCountdownDialog, CertificateViewer, ConfirmDialog, DetailsDialog
 from .history import HistoryPage
 from .style import palette, stylesheet
-from .widgets import Banner, CardStatus, DriveCard, ProfileOption, StatTile
+from .widgets import Banner, CardStatus, DriveCard, ProfileOption, StatTile, ui_key
 
 CARD_MIN_W = 360
 
@@ -291,7 +291,7 @@ class MainWindow(QMainWindow):
         self.profile_note.setText(f"<b>{p.name}</b>: {p.description}")
         plan = self.engine.plan(self.engine.drives, self.profile_id)
         for item in plan.items:
-            key = item.drive.identity.key()
+            key = ui_key(item.drive)
             st = self.status.get(key) or CardStatus()
             if st.op_state is None or st.op_state.is_final:
                 st.method = item.method if st.op_state is None else st.method
@@ -395,7 +395,7 @@ class MainWindow(QMainWindow):
     def _launch(self, plan, confirmations, auto_by: str | None = None):
         op_ids = self.engine.start(plan, confirmations, self.bridge.listener, auto_confirmed_by=auto_by)
         for op_id, it in zip(op_ids, plan.items):
-            key = it.drive.identity.key()
+            key = ui_key(it.drive)
             self.op_to_key[op_id] = key
             st = self.status.get(key) or CardStatus()
             st.op_id, st.method, st.op_state, st.message, st.progress, st.certificate = \
@@ -496,7 +496,7 @@ class MainWindow(QMainWindow):
 
     def show_details(self, key: str):
         d = self.cards[key].drive
-        DetailsDialog(d, self.store.history_for(key), self.dark, self).exec()
+        DetailsDialog(d, self.store.history_for(d.identity.key()), self.dark, self).exec()
 
     def store_certificates(self) -> set[str]:
         return {r["op_id"] for r in self.store.reports() if r["format"] == "pdf"}

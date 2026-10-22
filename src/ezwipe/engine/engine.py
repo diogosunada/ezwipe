@@ -90,6 +90,7 @@ class Engine:
     # ----------------------------------------------------------- discovery
     def refresh(self) -> list[Drive]:
         drives = self.discovery.discover()
+        self.safety.flag_shared_identities(drives)
         for d in drives:
             detector.evaluate(d, self.backends)
         self.drives = drives

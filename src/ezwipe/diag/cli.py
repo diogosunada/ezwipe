@@ -34,6 +34,8 @@ def collect(simulate: bool) -> tuple[list, dict, dict]:
     ed = build_edition(simulate)
     disc, backends, admin = ed.discovery, ed.backends, ed.admin
     drives = disc.discover()
+    from ..safety.manager import SafetyManager
+    SafetyManager.flag_shared_identities(drives)
     for d in drives:
         detector.evaluate(d, backends)
     env = {

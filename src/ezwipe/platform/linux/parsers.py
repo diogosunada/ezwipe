@@ -42,14 +42,19 @@ def _flag(v) -> bool:
 
 
 def parse_lsblk(text: str) -> list[dict]:
-    """Whole disks from `lsblk -J -b -o <LSBLK_COLUMNS>`. Loop, rom and zram are skipped."""
+    """Whole disks from `lsblk -J -b -o <LSBLK_COLUMNS>`.
+
+    Skipped: loop, rom and zram devices, floppy drives (fd*), and drives with no
+    media (size 0, e.g. an empty card reader)."""
     try:
         data = json.loads(text)
     except (json.JSONDecodeError, TypeError):
         return []
     disks = []
     for n in data.get("blockdevices", []):
-        if n.get("type") != "disk" or str(n.get("name", "")).startswith(("zram", "loop")):
+        if n.get("type") != "disk" or str(n.get("name", "")).startswith(("zram", "loop", "fd")):
+            continue
+        if not int(n.get("size") or 0):
             continue
         name = n.get("name", "")
         disks.append({

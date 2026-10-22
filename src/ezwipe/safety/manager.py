@@ -35,8 +35,33 @@ class SafetyManager:
             reasons.append(f"The drive has mounted volumes ({', '.join(drive.mounted_volumes)}). "
                            "They must be taken offline first.")
         if method is not None and method not in drive.available_methods:
-            reasons.append(f"{method.value} is not available for this drive through Windows.")
+            reasons.append(f"{method.value} is not available for this drive.")
         return SafetyVerdict(not reasons, reasons)
+
+    @staticmethod
+    def flag_shared_identities(drives: list[Drive]) -> list[Drive]:
+        """Protect drives that report the same model and serial as another drive.
+
+        Multi-bay USB enclosures (e.g. TerraMaster D4) often report the enclosure's
+        serial for every bay. EZWipe then cannot prove which physical drive it is
+        about to erase, and every bay would get the same confirmation code, so all
+        of them are blocked until each drive reports its own serial.
+        """
+        by_key: dict[str, list[Drive]] = {}
+        for d in drives:
+            if d.identity.serial.strip():
+                by_key.setdefault(d.identity.key(), []).append(d)
+        for group in by_key.values():
+            if len(group) < 2:
+                continue
+            for d in group:
+                d.identity_confident = False
+                d.protection_reason = (
+                    f"Same serial as {len(group) - 1} other drive(s); EZWipe cannot tell them apart. "
+                    "This usually means a multi-bay USB enclosure reporting its own serial. "
+                    "Connect the enclosure by USB4/Thunderbolt, or each drive directly.")
+                d.limitations.append(d.protection_reason)
+        return drives
 
     def revalidate(self, planned: DriveIdentity, current: DriveIdentity | None) -> SafetyVerdict:
         """Right before the destructive call: is it still the same drive?"""

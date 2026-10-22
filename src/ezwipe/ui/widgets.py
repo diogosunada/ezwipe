@@ -54,6 +54,13 @@ STATE_SHORT = {
 }
 
 
+def ui_key(drive: Drive) -> str:
+    """One key per physical slot, so drives that report the same serial
+    (multi-bay enclosures) still get a card each. The engine and the audit log
+    keep using the identity key (model|serial)."""
+    return f"{drive.identity.key()}@{drive.device_path}"
+
+
 def running_label(state: OperationState, progress: float | None) -> str:
     if state in (OperationState.WAITING, OperationState.READY):
         return "Queued"
@@ -120,7 +127,7 @@ class DriveCard(QFrame):
     def __init__(self, drive: Drive):
         super().__init__()
         self.drive = drive
-        self.key = drive.identity.key()
+        self.key = ui_key(drive)
         self.status = CardStatus()
         self.setObjectName("card")
         self.setMinimumWidth(330)
