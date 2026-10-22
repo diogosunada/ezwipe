@@ -1,0 +1,13 @@
+[Unit]
+Description=Mount the EZWIPE-DATA partition for certificates
+After=systemd-udev-settle.service local-fs.target
+Before=ezwipe-kiosk.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/ezwipe-mount-data
+ExecStop=/bin/sh -c 'sync; umount /run/ezwipe-data || true'
+
+[Install]
+WantedBy=multi-user.target

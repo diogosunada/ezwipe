@@ -1,0 +1,39 @@
+#!/bin/bash
+# Starts the EZWipe interface full screen.
+# Tries cage (Wayland kiosk, needs a working GPU driver); if that fails
+# within 20 s, falls back to the plain framebuffer, which works almost
+# everywhere (like a BIOS-era VGA screen).
+#
+# Kernel options read from /proc/cmdline:
+#   ezwipe.auto=PROFILE   start auto mode with this profile
+#   ezwipe.simulate       simulated drives (demo, training)
+
+mkdir -p /run/ezwipe-xdg && chmod 700 /run/ezwipe-xdg
+export XDG_RUNTIME_DIR=/run/ezwipe-xdg
+
+ARGS=(--kiosk)
+for w in $(cat /proc/cmdline); do
+    case "$w" in
+        ezwipe.auto=*) ARGS+=(--auto "${w#ezwipe.auto=}") ;;
+        ezwipe.simulate) ARGS+=(--simulate) ;;
+    esac
+done
+
+LOGDIR=/run/ezwipe-logs
+if mountpoint -q /run/ezwipe-data; then
+    LOGDIR=/run/ezwipe-data/logs
+fi
+mkdir -p "$LOGDIR"
+LOG="$LOGDIR/session-$(date +%Y%m%d-%H%M%S).log"
+
+echo "== $(date -Is) starting EZWipe ${ARGS[*]}" >>"$LOG"
+start=$(date +%s)
+QT_QPA_PLATFORM=wayland cage -s -- /opt/ezwipe/bin/ezwipe "${ARGS[@]}" >>"$LOG" 2>&1
+rc=$?
+if [ $rc -ne 0 ] && [ $(( $(date +%s) - start )) -lt 20 ]; then
+    echo "== cage failed (rc $rc), using the framebuffer" >>"$LOG"
+    export QT_QPA_PLATFORM=linuxfb
+    export QT_QPA_FB_HIDECURSOR=0
+    exec /opt/ezwipe/bin/ezwipe "${ARGS[@]}" >>"$LOG" 2>&1
+fi
+exit $rc

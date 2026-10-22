@@ -1,0 +1,4 @@
+# Shell scripts and files that go into the Linux image must keep LF endings.
+*.sh text eol=lf
+live/** text eol=lf
+*.py text eol=lf

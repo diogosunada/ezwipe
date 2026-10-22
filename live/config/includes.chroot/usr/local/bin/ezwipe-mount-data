@@ -1,0 +1,18 @@
+#!/bin/bash
+# Mount the partition labelled EZWIPE-DATA (on the boot USB or on any other
+# USB stick) read-write at /run/ezwipe-data. EZWipe keeps its audit database,
+# certificates, logs and ezwipe.toml there, and never offers that drive for erasing.
+set -u
+mkdir -p /run/ezwipe-data
+udevadm settle --timeout=10 || true
+for i in 1 2 3 4 5; do
+    dev=$(blkid -L EZWIPE-DATA 2>/dev/null) && break
+    sleep 1
+done
+if [ -z "${dev:-}" ]; then
+    echo "No EZWIPE-DATA partition found; certificates will be kept in memory only."
+    exit 0
+fi
+mount -o rw,noatime "$dev" /run/ezwipe-data || { echo "Could not mount $dev"; exit 0; }
+mkdir -p /run/ezwipe-data/reports /run/ezwipe-data/logs
+echo "Mounted $dev at /run/ezwipe-data"

@@ -1,0 +1,21 @@
+#!/bin/sh
+# Runs inside the image while it is built.
+set -e
+
+# EZWipe and PySide6 in their own environment.
+python3 -m venv /opt/ezwipe
+/opt/ezwipe/bin/pip install --no-cache-dir /opt/ezwipe-dist/*.whl
+rm -rf /opt/ezwipe-dist
+
+chmod +x /usr/local/bin/ezwipe-session /usr/local/bin/ezwipe-mount-data
+
+# Start EZWipe on tty1 instead of a login prompt.
+systemctl enable ezwipe-data.service ezwipe-kiosk.service
+systemctl disable getty@tty1.service || true
+
+# Never mount internal drives automatically, never use their swap.
+systemctl mask udisks2.service 2>/dev/null || true
+systemctl mask swap.target 2>/dev/null || true
+
+# Keep the machine awake while erasing.
+systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target 2>/dev/null || true
